@@ -6,7 +6,7 @@ PROGRAM=gaia
 
 all: dummy_folders gaia
 
-$(OUTPUT_FOLDER)/%.o : %.cpp
+$(OUTPUT_FOLDER)/%.o : %.cpp *.h
 	$(CXX) -c $(CXX_FLAGS) $< -o $@
 
 gaia: build/gaia.o build/simulation.o build/world.o

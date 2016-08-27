@@ -1,10 +1,14 @@
 #ifndef PERSON_H
 #define PERSON_H
 
+#include <list>
+
 #include "world.h"
 #include "utilities.h"
 
 struct Person {
+  std::list<Person>::iterator self_it;
+
   u64 id;
   u32 age;
   u32 lifetime;
@@ -37,14 +41,15 @@ struct Person {
     if(food_stock < CONSUMPTION_PER_TURN * 5) {
       int new_x, new_y;
       auto best_value = food_stock;
-      world.food.gradient(x, y, &new_x, &new_y, &best_value);
+      world.get_food_read().gradient(x, y, &new_x, &new_y, &best_value);
       if(best_value >= 2 * food_stock){
         move(new_x, new_y);
       }
     }
 
-    if(world.food(x,y) > FOOD_HARVEST_PER_TURN){
-      world.food(x,y) -= FOOD_HARVEST_PER_TURN;
+    /* XXX */
+    if(world.get_food_write()(x,y) > FOOD_HARVEST_PER_TURN){
+      world.get_food_write()(x,y) -= FOOD_HARVEST_PER_TURN;
       food_stock += FOOD_HARVEST_PER_TURN;
     }
   }

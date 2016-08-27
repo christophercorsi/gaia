@@ -21,6 +21,7 @@ Person* newGenesisPerson(World& world) {
   const bool is_male = random_generator.uniform_u32(0, 1) == 0;
 
   auto* person = new Person {
+    .self_it = std::list<Person>::iterator(),
     .id = person_counter++,
     .age = 0,
     .lifetime = random_generator.uniform_u32(10_years, 90_years),
@@ -111,8 +112,8 @@ int main(int argc, char **argv) {
     for(int j=0; j<height; ++j)
       for(int i=0; i<width; ++i) {
 
-        float food = world.food(i,j) * 0.001f;
-        float population = logf(1.f + world.population(i,j)) * 0.6f;
+        float food = world.get_food_read()(i,j) * 0.001f;
+        float population = logf(1.f + world.get_population()(i,j)) * 0.6f;
 
         const u8 food_color = (u8)(std::max(0.f, std::min(1.f, food)) * 255);
         const u8 population_color = (u8)(std::max(0.f, std::min(1.f, population)) * 255);
