@@ -23,6 +23,14 @@ struct Person {
     age ++;
     food_stock --;
 
+    // Prowl for food if we're about to starve
+    if(food_stock < 10) {
+      int new_x, new_y;
+      world.food.gradient(x, y, &new_x, &new_y);
+      x = new_x, y = new_y;
+    }
+
+
     if(world.food(x,y) > 0){
       world.food(x,y) -= 1.f;
       food_stock += 1;
