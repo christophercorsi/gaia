@@ -1,7 +1,7 @@
 #ifndef PERSON_H
 #define PERSON_H
 
-#include "vec2.h"
+#include "world.h"
 #include "utilities.h"
 
 struct Person {
@@ -17,11 +17,26 @@ struct Person {
   i32 x;
   i32 y;
 
-  void step() {
+  u32 food_stock;
+
+  void step(World& world) {
     age ++;
+    food_stock --;
+
+    if(world.food(x,y) > 0){
+      world.food(x,y) -= 1.f;
+      food_stock += 1;
+    }
   }
 
-  bool should_die() { return age >= lifetime; }
+  bool should_die() {
+    if(food_stock == 0) return true;
+    if(age >= lifetime) {
+      //log("died of old age [%lu]", id);
+      return true;
+    }
+    return false;
+  }
 };
 
 #endif /* end of include guard: PERSON_H

@@ -21,7 +21,7 @@ void Simulation::step() {
 
   // Let people advance (increase age, move, etc.)
   for(auto* person : people)
-    person->step();
+    person->step(world);
 
   // Advance the world state
   world.step();

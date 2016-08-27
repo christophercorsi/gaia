@@ -28,7 +28,8 @@ Person* newGenesisPerson(World& world) {
     .father = 0,
     .mother = 0,
     .x = random_generator.uniform_i32(0,width-1),
-    .y = random_generator.uniform_i32(0,height-1)
+    .y = random_generator.uniform_i32(0,height-1),
+    .food_stock = 20
   };
 
   return person;
@@ -40,7 +41,7 @@ int main(int argc, char **argv) {
   int width = 256, height = 256;
   auto world = World(width, height);
 
-  const auto n_starting_people = 1000000u;
+  const auto n_starting_people = 100000u;
   auto simulation = Simulation(n_starting_people, [&world]() -> Person*{
     return newGenesisPerson(world);
   }, world);
@@ -82,7 +83,8 @@ int main(int argc, char **argv) {
 
       std::stringstream title;
       title << "Gaia - [Time step " << simulation.getTimeStep() << "] ";
-      title << "[" << (u64)(simulation.getPeople().size() / delta) << " agent updates/ms]";
+      title << "[" << (u64)(simulation.getPeople().size() / delta) << " agent updates/ms] ";
+      title << "[" << simulation.getPeople().size() << " agents remain]";
       SDL_SetWindowTitle(window, title.str().c_str());
     }
 
@@ -101,6 +103,7 @@ int main(int argc, char **argv) {
       }
     }
 
+    // Drawing
     SDL_SetRenderDrawColor( renderer, 0, 0, 0, 255 );
     SDL_RenderClear(renderer);
 
@@ -109,7 +112,7 @@ int main(int argc, char **argv) {
       for(int i=0; i<width; ++i) {
 
         float food = world.food(i,j) * 0.001f;
-        const u8 color = (u8)(std::min(1.f, food) * 255);
+        const u8 color = (u8)(std::max(0.f, std::min(1.f, food)) * 255);
         SDL_SetRenderDrawColor(renderer, color, 0, 0, 255);
 
         const int scale = 4;
@@ -117,9 +120,8 @@ int main(int argc, char **argv) {
         SDL_RenderFillRect(renderer, &rect);
       }
 
-    // Drawing
-
     SDL_RenderPresent(renderer);
+    //SDL_Delay(250);
   }
 
 
