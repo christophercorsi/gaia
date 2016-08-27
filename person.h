@@ -43,7 +43,8 @@ struct Person {
       auto best_value = food_stock;
       world.get_food_read().gradient(x, y, &new_x, &new_y, &best_value);
       if(best_value >= 2 * food_stock){
-        move(new_x, new_y);
+        move(new_x, new_y); /* only one action per turn */
+        return;
       }
     }
 
@@ -51,11 +52,12 @@ struct Person {
     if(world.get_food_write()(x,y) > FOOD_HARVEST_PER_TURN){
       world.get_food_write()(x,y) -= FOOD_HARVEST_PER_TURN;
       food_stock += FOOD_HARVEST_PER_TURN;
+      return; /* only one action per turn */
     }
   }
 
   bool should_die() {
-    if(food_stock == 0) return true;
+    if(food_stock <= 0) return true;
     if(age >= lifetime) {
       //log("died of old age [%lu]", id);
       return true;

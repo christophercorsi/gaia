@@ -4,6 +4,7 @@
 #include <vector>
 #include <list>
 #include <functional>
+#include <atomic>
 
 #include "gaia_random.h"
 #include "grid.h"
@@ -45,17 +46,14 @@ public:
     return population;
   }
 
+  unsigned get_total_population() const
+  {
+    return total_population.load();
+  }
+
   void step();
 
-  void reset_population()
-  {
-    population.clear();
-  }
-
-  void add_population(unsigned i, unsigned j)
-  {
-    population(i,j) ++;
-  }
+  void add_person(Person &&person);
 
 private:
   unsigned buffer_idx;
@@ -67,11 +65,19 @@ private:
   Grid<float> food_growth_rate;
   Grid<float> precipitation;
   Grid<int>   population;
+  std::atomic<unsigned> total_population;
 
   // These are people stored per-tile for parallelism
-  std::vector<std::list<Person *>> tiles;
+  struct Tile {
+    std::list<Person> people;
+    std::list<Person> new_people;
+    unsigned tx, ty;
+  };
+
+  std::vector<Tile> tiles;
 
   void step_tile(unsigned id);
+  void move_tile(unsigned id);
 };
 
 #endif /* end of include guard: WORLD_H */

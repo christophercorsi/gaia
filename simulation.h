@@ -11,14 +11,12 @@
 class Simulation {
 private:
   World world;
-  std::vector<Person*> people;
   u64 time_step;
 
 public:
-  Simulation(int n_people, std::function<Person*()> person_generator, World& world);
+  Simulation(int n_people, std::function<Person(const World &)> person_generator, int width, int height);
   void step();
   u64 getTimeStep() const { return time_step; }
-  const std::vector<Person*>& getPeople() const { return people; }
 
   const World& getWorld() const { return world; }
 };

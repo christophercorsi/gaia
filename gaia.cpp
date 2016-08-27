@@ -16,11 +16,11 @@ Random random_generator;
 // One discrete time step is a Metric Month (a tenth of a year).
 
 u64 person_counter = 0;
-Person* newGenesisPerson(World& world) {
+Person newGenesisPerson(const World& world) {
   const float width = world.getWidth(), height = world.getHeight();
   const bool is_male = random_generator.uniform_u32(0, 1) == 0;
 
-  auto* person = new Person {
+  return Person {
     .self_it = std::list<Person>::iterator(),
     .id = person_counter++,
     .age = 0,
@@ -32,20 +32,17 @@ Person* newGenesisPerson(World& world) {
     .y = random_generator.uniform_i32(0,height-1),
     .food_stock = random_generator.uniform_f32(4, 3_years)
   };
-
-  return person;
 }
 
 int main(int argc, char **argv) {
   printf("Gaia!\n");
 
   int width = 256, height = 256;
-  auto world = World(width, height);
 
   const auto n_starting_people = 1000000u;
-  auto simulation = Simulation(n_starting_people, [&world]() -> Person*{
+  auto *simulation = new Simulation(n_starting_people, [](const World &world) -> Person{
     return newGenesisPerson(world);
-  }, world);
+  }, width, height);
 
   ///////////
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -72,7 +69,7 @@ int main(int argc, char **argv) {
   while(is_running) {
 
     // Advance simulation
-    simulation.step();
+    simulation->step();
 
     // Title update (TODO : IMGUI)
     {
@@ -83,9 +80,9 @@ int main(int argc, char **argv) {
       ticks = now;
 
       std::stringstream title;
-      title << "Gaia - [Time step " << simulation.getTimeStep() << "] ";
-      title << "[" << (u64)(simulation.getPeople().size() / delta) << " agent updates/ms] ";
-      title << "[" << simulation.getPeople().size() << " agents remain]";
+      title << "Gaia - [Time step " << simulation->getTimeStep() << "] ";
+      title << "[" << (u64)(simulation->getWorld().get_total_population() / delta) << " agent updates/ms] ";
+      title << "[" << simulation->getWorld().get_total_population() << " agents remain]";
       SDL_SetWindowTitle(window, title.str().c_str());
     }
 
@@ -108,7 +105,7 @@ int main(int argc, char **argv) {
     SDL_SetRenderDrawColor( renderer, 0, 0, 0, 255 );
     SDL_RenderClear(renderer);
 
-    const World& world(simulation.getWorld());
+    const World& world(simulation->getWorld());
     for(int j=0; j<height; ++j)
       for(int i=0; i<width; ++i) {
 
@@ -132,5 +129,8 @@ int main(int argc, char **argv) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
+
+  delete simulation;
+
   return 0;
 }
