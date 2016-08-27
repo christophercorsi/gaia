@@ -11,11 +11,12 @@ World::World(int width, int height)
   });
 
   food = Grid<float>(width, height, [](u32 x, u32 y){
-    float val = 1700.f * cosf(x * 0.03f) * cosf(y * 0.02f);
+    float val = 4000.f * cosf(x * 0.03f) * cosf(y * 0.02f);
     return std::max(0.f, std::min(10000.f, val));
   });
 
   precipitation = Grid<float>(width, height, 0.f);
+  population = Grid<int>(width, height, 0);
 }
 
 void World::step() {

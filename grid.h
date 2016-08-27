@@ -46,6 +46,8 @@ public:
     if(y>0        && (test = get(x,y-1)) > *best_value) { *best_value = test; *best_y = y-1; }
     if(y<height-1 && (test = get(x,y+1)) > *best_value) { *best_value = test; *best_y = y+1; }
   }
+
+  void clear() { size_t n = values.size(); values = std::vector<T>(n, 0); }
 };
 
 #endif /* end of include guard: GRID_H */

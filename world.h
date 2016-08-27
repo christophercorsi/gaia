@@ -20,6 +20,7 @@ public:
   Grid<float> food;
   Grid<float> food_growth_rate;
   Grid<float> precipitation;
+  Grid<int>   population;
 
   void step();
 };

@@ -23,6 +23,10 @@ void Simulation::step() {
   for(auto* person : people)
     person->step(world);
 
+  world.population.clear();
+  for(auto* person : people)
+    world.population(person->x, person->y) ++;
+
   // Advance the world state
   world.step();
 

@@ -112,8 +112,11 @@ int main(int argc, char **argv) {
       for(int i=0; i<width; ++i) {
 
         float food = world.food(i,j) * 0.001f;
-        const u8 color = (u8)(std::max(0.f, std::min(1.f, food)) * 255);
-        SDL_SetRenderDrawColor(renderer, color, 0, 0, 255);
+        float population = logf(1.f + world.population(i,j)) * 0.6f;
+
+        const u8 food_color = (u8)(std::max(0.f, std::min(1.f, food)) * 255);
+        const u8 population_color = (u8)(std::max(0.f, std::min(1.f, population)) * 255);
+        SDL_SetRenderDrawColor(renderer, food_color, population_color, 0, 255);
 
         const int scale = 4;
         SDL_Rect rect {scale * i + 2, scale * j + 2, scale - 2, scale - 2};
