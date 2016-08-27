@@ -19,16 +19,16 @@ void Simulation::step() {
 
   // TODO : multi-thread this.
 
+  // Advance the world state
+  world.step();
+
   // Let people advance (increase age, move, etc.)
   for(auto* person : people)
     person->step(world);
 
-  world.population.clear();
+  world.reset_population();
   for(auto* person : people)
-    world.population(person->x, person->y) ++;
-
-  // Advance the world state
-  world.step();
+    world.add_population(person->x, person->y);
 
   // Expire people
   people.erase(std::remove_if(people.begin(), people.end(), [](Person* person){
