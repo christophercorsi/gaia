@@ -23,13 +23,13 @@ Person* newGenesisPerson(World& world) {
   auto* person = new Person {
     .id = person_counter++,
     .age = 0,
-    .lifetime = random_generator.uniform_u32(50_years, 90_years),
+    .lifetime = random_generator.uniform_u32(10_years, 90_years),
     .is_male = is_male,
     .father = 0,
     .mother = 0,
     .x = random_generator.uniform_i32(0,width-1),
     .y = random_generator.uniform_i32(0,height-1),
-    .food_stock = 20
+    .food_stock = random_generator.uniform_f32(4, 3_years)
   };
 
   return person;
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   int width = 256, height = 256;
   auto world = World(width, height);
 
-  const auto n_starting_people = 100000u;
+  const auto n_starting_people = 1000000u;
   auto simulation = Simulation(n_starting_people, [&world]() -> Person*{
     return newGenesisPerson(world);
   }, world);

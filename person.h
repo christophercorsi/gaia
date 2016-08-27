@@ -17,23 +17,35 @@ struct Person {
   i32 x;
   i32 y;
 
-  u32 food_stock;
+  float food_stock;
+
+  static constexpr float FOOD_HARVEST_PER_TURN = 10.f;
+  static constexpr float CONSUMPTION_PER_TURN = 1.f;
+
+  void move(int new_x, int new_y) {
+    // It costs a little extra to move.
+    food_stock -= CONSUMPTION_PER_TURN;
+    x = new_x;
+    y = new_y;
+  }
 
   void step(World& world) {
     age ++;
-    food_stock --;
+    food_stock -= CONSUMPTION_PER_TURN;
 
     // Prowl for food if we're about to starve
-    if(food_stock < 10) {
+    if(food_stock < CONSUMPTION_PER_TURN * 5) {
       int new_x, new_y;
-      world.food.gradient(x, y, &new_x, &new_y);
-      x = new_x, y = new_y;
+      auto best_value = food_stock;
+      world.food.gradient(x, y, &new_x, &new_y, &best_value);
+      if(best_value >= 2 * food_stock){
+        move(new_x, new_y);
+      }
     }
 
-
-    if(world.food(x,y) > 0){
-      world.food(x,y) -= 1.f;
-      food_stock += 1;
+    if(world.food(x,y) > FOOD_HARVEST_PER_TURN){
+      world.food(x,y) -= FOOD_HARVEST_PER_TURN;
+      food_stock += FOOD_HARVEST_PER_TURN;
     }
   }
 
