@@ -5,115 +5,126 @@
 #include <sstream>
 #include <algorithm>
 #include <functional>
+
+#include <SDL.h>
+
+#include "simulation.h"
 #include "utilities.h"
 
 Random random_generator;
 
 // One discrete time step is a Metric Month (a tenth of a year).
 
-struct Tile {
-  float current_food;
-};
-
-struct World {
-  int width, height;
-  std::vector<Tile*> tiles;
-
-  World(int width, int height, std::function<Tile*(u32, u32)> tileGenerator)
-  : width(width), height(height) {
-
-    tiles = std::vector<Tile*>(width * height);
-    for(u32 y=0; y<height; ++y)
-      for(u32 x=0; x<width; ++x)
-        tiles[y*width + x] = tileGenerator(x,y);
-  }
-
-  Tile* get_random_tile() {
-    return tiles[ random_generator.uniform_u32(0, tiles.size()-1) ];
-  }
-};
-
-struct Person {
-  std::string name;
-  u32 age;
-  u32 lifetime;
-  Tile* location;
-
-  static std::string random_name(){
-    static u64 uid = 0;
-    std::stringstream name;
-    name << "Person_" << uid++;
-    return name.str();
-  }
-
-  bool should_die() {
-    return age >= lifetime;
-  }
-};
-
+u64 person_counter = 0;
 Person* newGenesisPerson(World& world) {
+  const float width = world.getWidth(), height = world.getHeight();
+  const bool is_male = random_generator.uniform_u32(0, 1) == 0;
+
   auto* person = new Person {
-    .name = Person::random_name(),
+    .id = person_counter++,
     .age = 0,
     .lifetime = random_generator.uniform_u32(50_years, 90_years),
-    .location = world.get_random_tile()
+    .is_male = is_male,
+    .father = 0,
+    .mother = 0,
+    .x = random_generator.uniform_i32(0,width-1),
+    .y = random_generator.uniform_i32(0,height-1)
   };
 
   return person;
 }
 
-struct Simulation {
-  World world;
-  std::vector<Person*> people;
-
-  Simulation(int width, int height, int n_people, std::function<Tile*(u32,u32)> tile_generator)
-  : world(World(width, height, tile_generator)) {
-
-    // Construct people!
-    people = std::vector<Person*>();
-    people.reserve( n_people );
-    for(size_t i=0; i<n_people; ++i) {
-      people.push_back( newGenesisPerson(world) );
-    }
-
-    log("Create %lu people during Genesis", people.size());
-  }
-
-  u64 time_step = 0;
-  void step() {
-    log("Simulating time step %lu", time_step);
-
-    // Age people
-    for(auto* person : people) {
-      person->age ++;
-    }
-
-    // Expire people
-    people.erase(std::remove_if(people.begin(), people.end(), [](Person* person){
-      const bool result = person->should_die();
-      if(result) log("Killing %s at age %u", person->name.c_str(), person->age);
-      return result;
-    }), people.end());
-
-    time_step ++;
-  }
-
-};
-
 int main(int argc, char **argv) {
-    printf("Gaia!\n");
+  printf("Gaia!\n");
 
-    const auto n_starting_people = 1000u;
-    auto simulation = Simulation(64, 64, n_starting_people, [](u32 x, u32 y) -> Tile* {
-      log("Generating new tile at (%u, %u)", x, y)
-      return new Tile{
-        .current_food = 100
-      };
-    });
+  int width = 256, height = 256;
+  auto world = World(width, height);
 
-    for(int i=0; i<100_years; ++i) {
-      simulation.step();
+  const auto n_starting_people = 1000000u;
+  auto simulation = Simulation(n_starting_people, [&world]() -> Person*{
+    return newGenesisPerson(world);
+  }, world);
+
+  ///////////
+  if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+  	log("SDL_Init Error: %s", SDL_GetError())
+  	return 1;
+  }
+
+  SDL_Window *window = SDL_CreateWindow("Gaia", 100, 100, 1024, 1024, SDL_WINDOW_SHOWN);
+  if (window == nullptr){
+  	log("SDL_CreateWindow Error: %s", SDL_GetError());
+  	SDL_Quit();
+  	return 1;
+  }
+
+  SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+  if (renderer == nullptr){
+  	SDL_DestroyWindow(window);
+  	log("SDL_CreateRenderer Error: %s", SDL_GetError());
+  	SDL_Quit();
+  	return 1;
+  }
+
+  bool is_running = true;
+  while(is_running) {
+
+    // Advance simulation
+    simulation.step();
+
+    // Title update (TODO : IMGUI)
+    {
+      static u64 ticks = 0;
+
+      u64 now = SDL_GetTicks();
+      u64 delta = now - ticks;
+      ticks = now;
+
+      std::stringstream title;
+      title << "Gaia - [Time step " << simulation.getTimeStep() << "] ";
+      title << "[" << (u64)(simulation.getPeople().size() / delta) << " agent updates/ms]";
+      SDL_SetWindowTitle(window, title.str().c_str());
     }
 
-    return 0;
+    // Even handling
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+      switch(e.type){
+        case SDL_QUIT:
+          is_running = false;
+          break;
+        case SDL_KEYDOWN:
+          if(e.key.keysym.sym == SDLK_ESCAPE)
+            is_running = false;
+          break;
+        default: break;
+      }
+    }
+
+    SDL_SetRenderDrawColor( renderer, 0, 0, 0, 255 );
+    SDL_RenderClear(renderer);
+
+    const World& world(simulation.getWorld());
+    for(int j=0; j<height; ++j)
+      for(int i=0; i<width; ++i) {
+
+        float food = world.food(i,j) * 0.001f;
+        const u8 color = (u8)(std::min(1.f, food) * 255);
+        SDL_SetRenderDrawColor(renderer, color, 0, 0, 255);
+
+        const int scale = 4;
+        SDL_Rect rect {scale * i + 2, scale * j + 2, scale - 2, scale - 2};
+        SDL_RenderFillRect(renderer, &rect);
+      }
+
+    // Drawing
+
+    SDL_RenderPresent(renderer);
+  }
+
+
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+  return 0;
 }
