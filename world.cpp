@@ -120,7 +120,7 @@ void World::move_tile(unsigned tile_id)
     if (new_id != tile_id) {
       Tile &new_tile = tiles[new_id];
       auto new_it = std::next(it, 1);
-      new_tile.new_people.splice(new_tile.people.begin(), tile.people, it);
+      new_tile.new_people.splice(new_tile.new_people.end(), tile.people, it);
       it = new_it;
    } else {
      ++it;
